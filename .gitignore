@@ -1,3 +1,5 @@
+_site/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -167,8 +169,9 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
-# Ruff stuff:
-.ruff_cache/
-
 # PyPI configuration file
 .pypirc
+
+.DS_Store
+.marimo
+test/

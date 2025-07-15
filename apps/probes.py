@@ -26,9 +26,9 @@ def _(C10, fig, mo):
 def _(C10):
     from probe import complex_probe, ssb_ctf
     from visualization import show_2d
-    import torch
+    import numpy as np
     import matplotlib.pyplot as plt
-    from torch.fft import fft2, ifft2, fftshift, ifftshift
+    from numpy.fft import fft2, ifft2, fftshift, ifftshift
     from visualization_utils import ScalebarConfig
 
 
@@ -38,9 +38,9 @@ def _(C10):
     dk = q_max / (n/2)
     wavelength = 2.5e-2 # 200kV
     q_probe = 1
-    qx = qy = torch.fft.fftfreq(n,sampling)
+    qx = qy = np.fft.fftfreq(n,sampling)
     q2 = qx[:,None]**2 + qy[None,:]**2
-    q  = torch.sqrt(q2)
+    q  = np.sqrt(q2)
     C30 = 0
 
 
@@ -49,7 +49,7 @@ def _(C10):
 
     reciprocal_sampling = 2 * q_max / n
     probe_fourier = complex_probe(q, wavelength, C10.value, C30, q_probe, reciprocal_sampling)
-    probe_reals = fftshift(ifft2(probe_fourier, norm="ortho"))
+    probe_reals = fftshift(ifft2(probe_fourier))
 
     scale1 = ScalebarConfig(
       sampling = dk,

@@ -8,7 +8,7 @@ from matplotlib import colors
 from mpl_toolkits.axes_grid1 import make_axes_locatable
  
 from numpy.typing import NDArray
-from torch import Tensor
+ 
 from custom_normalizations import (
     CustomNormalization,
     NormalizationConfig,
@@ -289,7 +289,7 @@ def _normalize_show_input_to_grid(
  
  
 def show_2d(
-    array: Union[Tensor, Sequence[Tensor], Sequence[Sequence[Tensor]]],
+    array: Union[NDArray, Sequence[NDArray], Sequence[Sequence[NDArray]]],
     *,
     figax: Optional[Tuple[Any, Any]] = None,
     axsize: Tuple[int, int] = (4, 4),
@@ -335,9 +335,8 @@ def show_2d(
     """
     if isinstance(array, (list, tuple)):
         # Convert list of Tensors to list of numpy arrays
-        array_list = [arr.detach().cpu().numpy() for arr in array]
         return show_2d_array(
-            array_list,
+            array,
             figax=figax,
             axsize=axsize,
             tight_layout=tight_layout,
@@ -347,7 +346,7 @@ def show_2d(
     else:
         if array.ndim <= 3:
             return show_2d_array(
-                array.detach().cpu().numpy(),
+                array,
                 figax=figax,
                 axsize=axsize,
                 tight_layout=tight_layout,

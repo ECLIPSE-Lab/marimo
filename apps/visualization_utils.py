@@ -10,7 +10,7 @@ from matplotlib.colorbar import Colorbar
 from matplotlib.figure import Figure
 from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
 from numpy.typing import NDArray
-from scipy.stats import binned_statistic_2d
+ 
 
 from custom_normalizations import CustomNormalization
 
@@ -406,58 +406,4 @@ _turbo_black = turbo_black()
 mpl.colormaps.register(_turbo_black, name="turbo_black")
 mpl.colormaps.register(_turbo_black.reversed(), name="turbo_black_r")
 
-
-def bilinear_histogram_2d(
-    shape: Tuple[int, int],
-    x: NDArray,
-    y: NDArray,
-    weight: NDArray,
-    origin: Tuple[float, float] = (0.0, 0.0),
-    sampling: Tuple[float, float] = (1.0, 1.0),
-    statistic: str = "sum",
-) -> NDArray:
-    """Create a 2D histogram with bilinear binning.
-
-    This function creates a 2D histogram where data points are distributed
-    across bins according to their position relative to bin centers, allowing
-    for smoother visualizations than standard histograms.
-
-    Parameters
-    ----------
-    shape : tuple
-        (Nx, Ny) shape of the output histogram.
-    x : array-like
-        x-coordinates of the data points.
-    y : array-like
-        y-coordinates of the data points.
-    weight : array-like
-        Weights for each data point.
-    origin : tuple, default=(0.0, 0.0)
-        (x0, y0) origin of the histogram grid.
-    sampling : tuple, default=(1.0, 1.0)
-        (dx, dy) sampling intervals.
-    statistic : str, default="sum"
-        Statistic to compute for each bin. Options include "sum", "mean", "count", etc.
-
-    Returns
-    -------
-    np.ndarray
-        2D histogram array with shape (Nx, Ny).
-    """
-    Nx, Ny = shape
-    dx, dy = sampling
-    x0, y0 = origin
-    x1, y1 = x0 + Nx * dx, y0 + Ny * dy
-
-    # Convert shape tuple to list for binned_statistic_2d
-    bins: Sequence[int] = [Nx, Ny]
-    hist, _, _, _ = binned_statistic_2d(
-        x,
-        y,
-        values=weight,
-        statistic=statistic,
-        bins=bins,  # type: ignore[arg-type]  # scipy's type hints are incorrect
-        range=[[x0, x1], [y0, y1]],  # [[x_min, x_max], [y_min, y_max]]
-    )
-
-    return hist  # shape = (Nx, Ny), i.e., array[x, y]
+ 

@@ -30,12 +30,9 @@ jobs:
         run: |
           uv pip install marimo
           uv pip install matplotlib
-          uv pip install numpy
-          uv pip install pandas
-          uv pip install scipy
-          uv pip install torch
-          uv pip install torchvision
-          uv pip install torchaudio
+          uv pip install numpy 
+          uv pip install torch --index-url https://download.pytorch.org/whl/cpu
+          uv pip install colorspacious
 
       - name: 🛠️ Export notebooks
         run: |

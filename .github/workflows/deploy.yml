@@ -29,6 +29,13 @@ jobs:
       - name: 📦 Install dependencies
         run: |
           uv pip install marimo
+          uv pip install matplotlib
+          uv pip install numpy
+          uv pip install pandas
+          uv pip install scipy
+          uv pip install torch
+          uv pip install torchvision
+          uv pip install torchaudio
 
       - name: 🛠️ Export notebooks
         run: |

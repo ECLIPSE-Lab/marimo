@@ -80,7 +80,7 @@ def _(
     # defocus.stop = max_defocus
 
     defocus = mo.ui.slider(
-        start=- max_defocus, stop=max_defocus, step=5, label="defocus [Å]", show_value=True, value = 10
+        start=- max_defocus, stop=max_defocus, step=5, label="defocus [Å]", show_value=True, value = 100
     )
     scan_step = mo.ui.slider(
         start=0.05, stop=FOV/2, step=0.05, label="scan step [Å]", show_value=True, value = 0.5
@@ -138,7 +138,7 @@ def _(
         defocus=defocus.value,
         astigmatism=astigmatism.value,
         astigmatism_angle=np.deg2rad(astigmatism_angle_slider.value),
-    
+
     ).build() 
     print(f'probe_radius      : {probe_radius}')
     print(f'probe_sampling    : {probe_sampling}')
@@ -174,19 +174,24 @@ def _(
         vmin=0,
         vmax=1,
     )
-    ax_real.set_title("real-space complex probe")
-    ax_fourier.set_title("reciprocal-space complex probe")
+    ax_real.set_title("real-space wave")
+    ax_fourier.set_title("reciprocal-space wave")
     add_scalebar(ax_real, probe.sampling[0], r"$\AA$")
     add_scalebar(ax_fourier, probe.angular_sampling[0], "mrad")
+    text_nyquist = mo.md(
+        f"""
+        Nyquist res.      : {2*sampling:2.2f}Å 
+    """
+    )
     text1 = mo.md(
         f"""
         Probe Radius      : {probe_radius:2.2f}Å 
     """
-    ) 
+    )
     text2 = mo.md(
         f""" 
         Probe Sampling    : {probe_sampling:2.2f}
- 
+
     """
     ) 
     text3 = mo.md(
@@ -199,8 +204,26 @@ def _(
         Areal oversampling: {areal_oversampling:2.2f} 
     """
     ) 
+    text5 = mo.md(
+        f""" 
+        References: 
+
+        - Gilgenbach et al. (2024) [10.1093/mam/ozae055](https://doi.org/10.1093/mam/ozae055)
+        - Gilgenbach et al. (2025) [arXiv.2505.14372](http://arxiv.org/abs/2505.14372)
+
+    """
+    ).center()
+    text6 = mo.md(
+        f"""    
+
+        - [G. Varnavides Marimo Gallery](https://marimo.io/p/@gvarnavides/stem-probes)
+        - Skoupy et al. (2025) [10.1093/mam/ozae055](https://doi.org/10.1093/mam/ozae055)
+        - Edo et al. (2013) [10.1103/PhysRevA.87.053850](https://doi.org/10.1103/PhysRevA.87.053850)
+    """
+    ).center()
+
     vertical = mo.vstack(
-        [energy,max_semiangle,detector,convergence_angle,defocus, scan_step, text1, text2, text3, text4],
+        [energy,max_semiangle,detector,convergence_angle,defocus, scan_step, text_nyquist,text1, text2, text3, text4],
         align="end",
         gap=0
     )
@@ -211,11 +234,19 @@ def _(
         gap=0,
         wrap=False,
     )
+    horizontal2 = mo.hstack(
+        [ text5, text6],
+        align="center",
+        justify="center",
+        gap=0,
+        wrap=False,
+    )
     vertical2 = mo.vstack(
-        [horizontal, fig_metrics],
-        align="end",
+        [horizontal, fig_metrics, horizontal2],
+        align="start",
         gap=0
     )
+
     vertical2
     return
 
@@ -756,6 +787,9 @@ def _():
         ax1.set_box_aspect(1.)
         ax2.set_aspect(1.)
         ax3.set_box_aspect(1.)
+        ax1.set_title('Probe sampling vs. Diff. Oversampling')
+        ax2.set_title('Probe Overlap')
+        ax3.set_title('Heuristic success probability')
 
         _plot_linear_metrics(ax1, metrics)
         _plot_probe_overlap(ax2, metrics)

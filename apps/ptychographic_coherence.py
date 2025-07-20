@@ -22,7 +22,7 @@ def _(mo):
     )
 
     Cc = mo.ui.slider(
-        start=0, stop=2, step=0.05, label="Cc [mm]", show_value=True, value=0.7
+        start=0, stop=2, step=0.05, label="Cc [mm]", show_value=True, value=1.2
     )
 
 
@@ -39,7 +39,7 @@ def _(mo):
 
     convergence_angle = mo.ui.slider(
         start=5,
-        stop=40,
+        stop=80,
         value=20,
         step=0.5,
         label="conv. semiangle [mrad]",
@@ -96,7 +96,7 @@ def _(
     focal_spread = Cc.value * 1e-3 * deltaE.value / energy.value * 1e10
     print(f'focal spread {focal_spread}')
     defocus = mo.ui.slider(
-        start=- max_defocus, stop=max_defocus, step=5, label="defocus [Å]", show_value=True, value = 100
+        start=- max_defocus, stop=max_defocus, step=5, label="defocus [Å]", show_value=True, value = 1
     )
     scan_step = mo.ui.slider(
         start=0.05, stop=FOV/2, step=0.05, label="scan step [Å]", show_value=True, value = 0.5

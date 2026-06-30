@@ -148,6 +148,7 @@ def double_and_triple_pixel_counts(q, R, delta_k):
     ``utils/transfer.py:double_and_triple_pixel_counts``.
     """
     q = np.asarray(q, dtype=np.float64)
+    q = np.atleast_1d(q)
     a3 = triple_overlap_area(q, R)
     a2 = 2 * pair_overlap_area(q, R) + pair_overlap_area(2 * q, R) - 3 * a3
     a2[q >= 2 * R] = 0.0
@@ -161,7 +162,8 @@ def ptycho_ssnr(pctf, q, R, delta_k, fluence):
     Mirrors scatterem ``direct_ptychography_ssnr``:
     ``SSNR(q) = fluence * PCTF(q)**2 / noise(q)**2`` with
     ``noise**2 = (N2 + N3) / Nalpha`` and ``Nalpha = pi * (R / delta_k)**2``.
-    Returns 0 where the apertures no longer overlap (``q >= 2R`` -> noise 0).
+    Returns 0 where the apertures no longer overlap (``q >= 2R``); there the N2/N3
+    pixel counts are clamped to 0, so there is no signal to recover.
 
     pctf, q : 1-D arrays of equal length. R, delta_k : 1/Angstrom.
     fluence : electrons per probe position.

@@ -53,7 +53,7 @@ def test_pixel_counts_nonnegative():
     assert np.all(n2 >= -1e-9) and np.all(n3 >= -1e-9)
 
 
-def test_ptycho_ssnr_dc_is_zero():
+def test_ptycho_ssnr_zero_when_pctf_zero():
     q = np.linspace(0, 2.2 * R, 100)
     pctf = np.ones_like(q)
     pctf[0] = 0.0
@@ -72,6 +72,12 @@ def test_ptycho_ssnr_scales_linearly_with_fluence():
     s1 = ptycho_ssnr(pctf, q, R, DK, 1.0)
     s2 = ptycho_ssnr(pctf, q, R, DK, 10.0)
     np.testing.assert_allclose(s2, 10.0 * s1)
+
+
+def test_ptycho_ssnr_analytic_value_at_dc():
+    # At q=0: n2=0, n3=Nalpha => noise_sq=1 => SSNR = fluence * pctf^2
+    result = ptycho_ssnr(np.array([1.0]), np.array([0.0]), R, DK, 1000.0)
+    assert result[0] == pytest.approx(1000.0)
 
 
 def test_adf_ssnr_formula_and_scaling():

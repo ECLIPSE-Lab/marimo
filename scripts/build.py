@@ -54,7 +54,7 @@ THUMBNAILS_DIR = Path("thumbnails")
 SITE_TITLE = "Pelz Lab"
 SITE_TAGLINE = "Interactive ptychography &amp; electron-microscopy tools"
 LAB_URL = "https://pelzlab.science"
-REPO_URL = "https://github.com/PhilippPelz/marimo"
+REPO_URL = "https://github.com/ECLIPSE-Lab/marimo"
 
 
 def is_marimo_notebook(path: Path) -> bool:

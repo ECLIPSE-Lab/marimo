@@ -39,7 +39,12 @@ def _(mo, np):
     )
 
     adf_efficiency = mo.ui.slider(
-        start=0.01, stop=0.5, step=0.01, value=0.5,
+        start=0.01, stop=1.0, step=0.01, value=1.0,
+        show_value=True,
+    )
+
+    adf_gamma = mo.ui.slider(
+        start=1, stop=50, step=1, value=10,
         show_value=True,
     )
 
@@ -58,6 +63,7 @@ def _(mo, np):
     # ).center()
     return (
         adf_efficiency,
+        adf_gamma,
         astigmatism,
         astigmatism_angle_slider,
         convergence_angle,
@@ -126,6 +132,7 @@ def _(
 def _(
     add_scalebar,
     adf_efficiency,
+    adf_gamma,
     convergence_angle,
     defocus,
     detector,
@@ -271,6 +278,7 @@ def _(
             _ctrl_row("Defocus [Å]", defocus),
             _ctrl_row("Dose [e⁻/Å²]", dose),
             _ctrl_row("ADF efficiency η", adf_efficiency),
+            _ctrl_row("ADF γ [Å]", adf_gamma),
         ],
         align="start",
         gap=0.25,
@@ -357,6 +365,7 @@ def _(np, probe_real, sh):
 def _(
     adf_ctf_base,
     adf_efficiency,
+    adf_gamma,
     adf_ssnr,
     convergence_angle,
     dk,
@@ -373,7 +382,15 @@ def _(
     fluence = dose.value * sampling**2                   # e⁻ per probe position
 
     ssnr_ptycho = ptycho_ssnr(pctf, q, R, dk, fluence)
-    ssnr_adf = adf_ssnr(adf_ctf_base, fluence, adf_efficiency.value)
+
+    # ADF resolution envelope (Lorentzian), coupled to dose: the half-power cutoff
+    # q_c rises as dose**(1/4) (dose-limited-resolution law), so more dose pushes the
+    # ADF rolloff to higher q. adf_gamma (Å) is the resolution length at dose_ref.
+    dose_ref = 1e4
+    q_c = (1.0 / adf_gamma.value) * (dose.value / dose_ref) ** 0.25
+    adf_envelope = 1.0 / (1.0 + (q / q_c) ** 2)
+    ssnr_adf = adf_ssnr(adf_ctf_base, fluence, adf_efficiency.value) * adf_envelope
+
     ssnr_combined = ssnr_ptycho + ssnr_adf
     return ssnr_adf, ssnr_combined, ssnr_ptycho
 

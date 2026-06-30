@@ -8,14 +8,11 @@ app = marimo.App(width="medium")
 def _(mo, np):
     # controls
     max_semiangle = mo.ui.dropdown(options={r"1 alpha":1, "2 alpha":2, "3 alpha":3, "4 alpha":4, "5 alpha":5, "6 alpha":6},
-                            value="2 alpha", # initial value
-                            label="Max. Semiangle")
+                            value="2 alpha")  # initial value
     energy = mo.ui.dropdown(options={"300 keV":300e3, "200 keV":200e3, "80 keV":80e3, "60 keV":60e3, "30 keV":30e3},
-                            value="300 keV", # initial value
-                            label="Electron energy")
+                            value="300 keV")  # initial value
     detector = mo.ui.dropdown(options={"512":512,"256":256, "192":192, "128":128, "96":96, "48":48, "16":16},
-                            value="512", # initial value
-                            label="Detector shape")
+                            value="512")  # initial value
 
 
 
@@ -32,20 +29,18 @@ def _(mo, np):
         stop=40,
         value=20,
         step=0.5,
-        label="conv. semiangle [mrad]",
         show_value=True,
     )
 
     dose = mo.ui.slider(
         steps=np.logspace(2, 6, 41).tolist(),
         value=1e4,
-        label="dose [e⁻/Å²]",
         show_value=True,
     )
 
     adf_efficiency = mo.ui.slider(
-        start=0.01, stop=0.5, step=0.01, value=0.1,
-        label="ADF efficiency η", show_value=True,
+        start=0.01, stop=0.5, step=0.01, value=0.5,
+        show_value=True,
     )
 
 
@@ -94,7 +89,7 @@ def _(
     # defocus.stop = max_defocus
 
     defocus = mo.ui.slider(
-        start=0, stop=max_defocus, step=5, label="defocus [Å]", show_value=True, value = 100
+        start=0, stop=max_defocus, step=5, show_value=True, value = 100
     )
     scan_step = sampling
     return defocus, dk, lam, max_detector_alpha, sampling, scan_step
@@ -254,9 +249,36 @@ def _(
     """
     ) 
  
+    def _ctrl_row(text, widget):
+        return mo.hstack(
+            [
+                mo.md(text).style(
+                    {"width": "180px", "text-align": "right", "white-space": "nowrap"}
+                ),
+                widget,
+            ],
+            justify="start",
+            align="center",
+            gap=0.5,
+        )
+
+    controls = mo.vstack(
+        [
+            _ctrl_row("Electron energy", energy),
+            _ctrl_row("Max. semiangle", max_semiangle),
+            _ctrl_row("Detector shape", detector),
+            _ctrl_row("Conv. semiangle [mrad]", convergence_angle),
+            _ctrl_row("Defocus [Å]", defocus),
+            _ctrl_row("Dose [e⁻/Å²]", dose),
+            _ctrl_row("ADF efficiency η", adf_efficiency),
+        ],
+        align="start",
+        gap=0.25,
+    )
+
     vertical = mo.vstack(
-        [energy,max_semiangle,detector,convergence_angle,defocus, dose, adf_efficiency, text_nyquist,text7,text1, text2, text3, text4],
-        align="end",
+        [controls, text_nyquist, text7, text1, text2, text3, text4],
+        align="start",
         gap=0
     )
     horizontal = mo.hstack(

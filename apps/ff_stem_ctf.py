@@ -360,21 +360,15 @@ def _(
 def _(np, plt, probe, sh, ssnr_adf, ssnr_combined, ssnr_ptycho):
     kx, _ = probe.get_spatial_frequencies()
 
-    # SSNR is 0 at DC and beyond the 2R aperture-overlap cutoff; mask those to NaN
-    # so the log plot shows clean gaps instead of log(0) warnings.
-    def _pos(a):
-        a = np.asarray(a, dtype=float).copy()
-        a[a <= 0] = np.nan
-        return a
-
     fig_pctf, ax_pctf = plt.subplots(figsize=(16.8 / 1.5, 3))
-    ax_pctf.semilogy(_pos(ssnr_ptycho), label='ptychography')
-    ax_pctf.semilogy(_pos(ssnr_adf), label='ADF-STEM')
-    ax_pctf.semilogy(_pos(ssnr_combined), label='ptychography + ADF-STEM')
+    ax_pctf.plot(ssnr_ptycho, label='ptychography')
+    ax_pctf.plot(ssnr_adf, label='ADF-STEM')
+    ax_pctf.plot(ssnr_combined, label='ptychography + ADF-STEM')
     ax_pctf.legend()
     ax_pctf.set_ylabel('SSNR')
     ax_pctf.set_xlabel('spatial frequency [1/Å]')
     ax_pctf.set_xlim(0, sh[0] / 2)
+    ax_pctf.set_ylim(bottom=0)
 
     xtick_positions = np.linspace(0, sh[0] / 2, 16)
     ax_pctf.set_xticks(xtick_positions)

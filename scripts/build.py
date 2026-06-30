@@ -7,6 +7,20 @@ from typing import List
 from pathlib import Path
 
 
+def is_marimo_notebook(path: Path) -> bool:
+    """True only for files that define a marimo app.
+
+    The build sweeps ``notebooks/`` and ``apps/`` recursively, which also picks up
+    helper modules (e.g. ``apps/ctf/utils.py``). Those are imported by notebooks, not
+    standalone apps, so anything without a ``marimo.App(...)`` definition is excluded
+    from the gallery.
+    """
+    try:
+        return "marimo.App(" in path.read_text(encoding="utf-8")
+    except OSError:
+        return False
+
+
 def export_html_wasm(notebook_path: str, output_dir: str, as_app: bool = False) -> bool:
     """Export a single marimo notebook to HTML format.
 
@@ -99,7 +113,11 @@ def main() -> None:
             print(f"Warning: Directory not found: {dir_path}")
             continue
 
-        all_notebooks.extend(str(path) for path in dir_path.rglob("*.py"))
+        all_notebooks.extend(
+            str(path)
+            for path in dir_path.rglob("*.py")
+            if is_marimo_notebook(path)
+        )
 
     if not all_notebooks:
         print("No notebooks found!")

@@ -760,8 +760,60 @@ def _():
     import matplotlib.pyplot as plt
     from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
     from colorspacious import cspace_convert
-    from ctf.utils import ptycho_ssnr, adf_ssnr
-    return AnchoredSizeBar, adf_ssnr, cspace_convert, mo, np, plt, ptycho_ssnr
+    return AnchoredSizeBar, cspace_convert, mo, np, plt
+
+
+@app.cell
+def _(np):
+    # SSNR math — an inlined copy of the ctf.utils helpers (unit-tested there, and a
+    # parity test keeps this copy in sync) so the WASM/pyodide browser export stays
+    # self-contained: the deployed bundle is a single notebook, and sibling packages
+    # are NOT importable in the browser.
+    def pair_overlap_area(d, R):
+        d = np.asarray(d, dtype=np.float64)
+        area = np.zeros_like(d)
+        mask = d < 2 * R
+        dm = d[mask]
+        area[mask] = 2 * R**2 * np.arccos(dm / (2 * R)) - 0.5 * dm * np.sqrt(4 * R**2 - dm**2)
+        return area
+
+    def triple_overlap_area(q, R):
+        q = np.asarray(q, dtype=np.float64)
+        area = np.zeros_like(q)
+        mask = q <= R
+        qm = q[mask]
+        area[mask] = np.pi * R**2 - 2 * R**2 * np.arcsin(qm / R) - 2 * qm * np.sqrt(R**2 - qm**2)
+        return area
+
+    def double_and_triple_pixel_counts(q, R, delta_k):
+        q = np.atleast_1d(np.asarray(q, dtype=np.float64))
+        a3 = triple_overlap_area(q, R)
+        a2 = 2 * pair_overlap_area(q, R) + pair_overlap_area(2 * q, R) - 3 * a3
+        a2[q >= 2 * R] = 0.0
+        a3[q >= 2 * R] = 0.0
+        return a2 / delta_k**2, a3 / delta_k**2
+
+    def ptycho_ssnr(pctf, q, R, delta_k, fluence):
+        pctf = np.asarray(pctf, dtype=np.float64)
+        q = np.asarray(q, dtype=np.float64)
+        n2, n3 = double_and_triple_pixel_counts(q, R, delta_k)
+        n_alpha = np.pi * (R / delta_k) ** 2
+        noise_sq = (n2 + n3) / n_alpha
+        ssnr = np.zeros_like(pctf)
+        nz = noise_sq > 0
+        ssnr[nz] = fluence * pctf[nz] ** 2 / noise_sq[nz]
+        return ssnr
+
+    def adf_ssnr(adf_ctf, fluence, efficiency):
+        adf_ctf = np.asarray(adf_ctf, dtype=np.float64)
+        return fluence * efficiency * adf_ctf**2
+    return (
+        adf_ssnr,
+        double_and_triple_pixel_counts,
+        pair_overlap_area,
+        ptycho_ssnr,
+        triple_overlap_area,
+    )
 
 
 @app.cell
@@ -771,7 +823,6 @@ def _():
     import numpy as numpy
     from numpy.typing import ArrayLike, NDArray
     from matplotlib.colors import LinearSegmentedColormap, Normalize, Colormap
-    from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
     from matplotlib.axes import Axes
     from matplotlib.figure import Figure
     import matplotlib 

@@ -85,3 +85,22 @@ def test_adf_ssnr_formula_and_scaling():
     np.testing.assert_allclose(adf_ssnr(ctf, 100.0, 0.1), 100.0 * 0.1 * ctf**2)
     np.testing.assert_allclose(adf_ssnr(ctf, 200.0, 0.1), 2 * adf_ssnr(ctf, 100.0, 0.1))
     np.testing.assert_allclose(adf_ssnr(ctf, 100.0, 0.2), 2 * adf_ssnr(ctf, 100.0, 0.1))
+
+
+def test_app_inlined_ssnr_matches_reference():
+    """The WASM-deployed app inlines its own copy of the SSNR math (sibling modules
+    aren't importable in the browser). Guard against drift from this tested reference."""
+    import matplotlib
+
+    matplotlib.use("Agg")
+    from apps.ff_stem_ssnr import app
+
+    _, defs = app.run()
+    q = np.linspace(0, 2.5 * R, 60)
+    pctf = np.linspace(0, 1, 60)
+    np.testing.assert_allclose(
+        defs["ptycho_ssnr"](pctf, q, R, DK, 500.0), ptycho_ssnr(pctf, q, R, DK, 500.0)
+    )
+    np.testing.assert_allclose(
+        defs["adf_ssnr"](pctf, 500.0, 0.3), adf_ssnr(pctf, 500.0, 0.3)
+    )

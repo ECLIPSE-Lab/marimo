@@ -48,6 +48,8 @@ def _(mo, np):
         show_value=True,
     )
 
+    c3_scherzer = mo.ui.checkbox(value=False)
+
 
     # mo.md(
     #     f"""
@@ -66,6 +68,7 @@ def _(mo, np):
         adf_gamma,
         astigmatism,
         astigmatism_angle_slider,
+        c3_scherzer,
         convergence_angle,
         detector,
         dose,
@@ -106,23 +109,30 @@ def _(
     ComplexProbe,
     astigmatism,
     astigmatism_angle_slider,
+    c3_scherzer,
     convergence_angle,
     defocus,
     detector,
     energy,
+    lam,
     np,
     sampling,
 ):
+    # C3 (spherical aberration, Cs): 0 when unchecked, else the Scherzer value for
+    # which the current defocus is the extended-Scherzer optimum (Δf = -1.2·√(Cs·λ)),
+    # i.e. Cs = (defocus / 1.2)**2 / lam. Units: Å.
+    cs = (defocus.value / 1.2) ** 2 / lam if c3_scherzer.value else 0.0
     probe = ComplexProbe(
         energy1=energy.value,
         gpts=(detector.value, detector.value),
         sampling=(sampling, sampling),
         semiangle_cutoff=convergence_angle.value,
         defocus=defocus.value,
+        Cs=cs,
         astigmatism=astigmatism.value,
         astigmatism_angle=np.deg2rad(astigmatism_angle_slider.value),
 
-    ).build() 
+    ).build()
     probe_real = np.fft.fftshift(probe._array)
     probe_fourier = np.fft.fftshift(probe._array_fourier)
     return probe, probe_fourier, probe_real
@@ -133,6 +143,7 @@ def _(
     add_scalebar,
     adf_efficiency,
     adf_gamma,
+    c3_scherzer,
     convergence_angle,
     defocus,
     detector,
@@ -276,6 +287,7 @@ def _(
             _ctrl_row("Detector shape", detector),
             _ctrl_row("Conv. semiangle [mrad]", convergence_angle),
             _ctrl_row("Defocus [Å]", defocus),
+            _ctrl_row("C3 = Scherzer", c3_scherzer),
             _ctrl_row("Dose [e⁻/Å²]", dose),
             _ctrl_row("ADF efficiency η", adf_efficiency),
             _ctrl_row("ADF γ [Å]", adf_gamma),

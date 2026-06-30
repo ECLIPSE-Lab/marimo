@@ -35,6 +35,25 @@ import polars as pl
 df = pl.read_csv(mo.notebook_location() / "public" / "penguins.csv")
 ```
 
+## 🖼️ Gallery thumbnails
+
+The landing page (`scripts/build.py` → `generate_index`) shows a real screenshot
+thumbnail for each app. Per-app card copy lives in the `APPS` table in
+`scripts/build.py`; an app missing from the table still appears with a titleized
+name, and an app missing a thumbnail falls back to a CSS gradient placeholder.
+
+Thumbnails are committed under `thumbnails/<stem>.png` and regenerated locally
+(not in CI) with Playwright:
+
+```bash
+pip install playwright && python -m playwright install chromium
+python scripts/screenshots.py            # capture all live apps
+python scripts/screenshots.py --only ptychographic_ctf --settle 20  # one app
+```
+
+Commit the resulting PNGs. `scripts/build.py` copies `thumbnails/` into `_site/`
+at build time.
+
 ## 🧪 Testing
 
 To test the export process, run `scripts/build.py` from the root directory.

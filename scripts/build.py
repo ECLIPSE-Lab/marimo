@@ -284,7 +284,6 @@ def generate_index(all_notebooks: List[str], output_dir: str) -> None:
 
     <header class="relative overflow-hidden">
       <div class="mx-auto max-w-6xl px-6 py-16 text-center sm:py-24">
-        <img src="public/eclipse-lab-header.png" alt="{SITE_TITLE}" class="mx-auto mb-8 w-full max-w-md" />
         <h1 class="font-display text-4xl font-bold tracking-tight text-slate-50 sm:text-5xl">Interactive electron-microscopy apps</h1>
         <p class="mx-auto mt-5 max-w-2xl text-lg font-light leading-relaxed text-slate-300">{SITE_TAGLINE}. Each app runs entirely in your browser via WebAssembly — no install required.</p>
         <div class="mt-8 flex flex-wrap items-center justify-center gap-4">

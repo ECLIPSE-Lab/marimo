@@ -135,7 +135,7 @@ def _(
     ).build()
     probe_real = np.fft.fftshift(probe._array)
     probe_fourier = np.fft.fftshift(probe._array_fourier)
-    return probe, probe_fourier, probe_real
+    return cs, probe, probe_fourier, probe_real
 
 
 @app.cell
@@ -145,6 +145,7 @@ def _(
     adf_gamma,
     c3_scherzer,
     convergence_angle,
+    cs,
     defocus,
     detector,
     dk,
@@ -287,7 +288,15 @@ def _(
             _ctrl_row("Detector shape", detector),
             _ctrl_row("Conv. semiangle [mrad]", convergence_angle),
             _ctrl_row("Defocus [Å]", defocus),
-            _ctrl_row("C3 = Scherzer", c3_scherzer),
+            _ctrl_row(
+                "C3 = Scherzer",
+                mo.hstack(
+                    [c3_scherzer, mo.md(f"{cs / 1e4:.3f} µm")],
+                    justify="start",
+                    align="center",
+                    gap=0.5,
+                ),
+            ),
             _ctrl_row("Dose [e⁻/Å²]", dose),
             _ctrl_row("ADF efficiency η", adf_efficiency),
             _ctrl_row("ADF γ [Å]", adf_gamma),

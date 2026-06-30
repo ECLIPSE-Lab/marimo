@@ -130,9 +130,15 @@ scatterem documents for its analytical SSNR fallback.
    - `adf_efficiency` (η) slider, range 0.01–0.5, default 0.1.
    Update the returned tuple accordingly.
 
-2. **Utilities cell** (the `ComplexProbe` cell, ~`:370`): add the three pure
-   functions from §3.2 plus a thin `ptycho_noise_squared(q, R, dk)` helper. These are
-   standalone and unit-testable.
+2. **Math module** `ctf/utils.py` (+ mirror `apps/ctf/utils.py`, re-exported via both
+   `__init__.py`): add the three pure functions from §3.2 plus `ptycho_ssnr(...)` and
+   `adf_ssnr(...)` assemblers (§3.1, §3.3). The notebook imports them
+   (`from ctf.utils import double_and_triple_pixel_counts, ptycho_ssnr, adf_ssnr`) —
+   `ctf` resolves both from repo root and from `apps/` via the existing mirror.
+   Rationale: this is the repo's established pure-numpy helper module and is directly
+   pytest-importable (the inline-cell alternative from the original draft cannot be
+   unit-tested without running the whole notebook). `ctf/` is the source of truth;
+   `apps/ctf/` is kept byte-identical.
 
 3. **New compute cell**: inputs `pctf`, `adf_ctf_base`, `dose`, `adf_efficiency`,
    `sampling`, `dk`, `lam`, `convergence_angle`; outputs `ssnr_ptycho`, `ssnr_adf`,
@@ -156,8 +162,8 @@ scatterem documents for its analytical SSNR fallback.
 
 ## 5. Testing
 
-Pure-numpy unit tests (no scatterem / torch dependency, keeping the app
-self-contained):
+Pure-numpy `pytest` unit tests in `tests/test_ssnr.py`, importing `ctf.utils`
+directly (no scatterem / torch dependency, no notebook execution needed):
 
 - `pair_overlap_area`: `d=0 → πR²`; `d≥2R → 0`; monotonically decreasing in d on
   `[0, 2R]`.

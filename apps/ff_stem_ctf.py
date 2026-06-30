@@ -185,22 +185,6 @@ def _(
     }
  
 
-    print(f'probe_radius      : {probe_radius}')
-    print(f'probe_sampling    : {probe_sampling}')
-    print(f'ronchi_mag        : {ronchi_mag}')
-    print(f'areal_oversamp    : {areal_oversampling}')
-    print(f'fund_samp         : {fund_samp}')
-    print()
-    print(f'lam               : {lam}') 
-    print(f'det shape         : {detector.value}')
-    print(f'max_detector_alpha: {max_detector_alpha*1e3}')
-    print(f'dk                : {dk}')
-    print(f'dk probe          : {probe.reciprocal_space_sampling}')
-    print(f'sampling          : {sampling}')
-
-    print(f'max_detector_alpha: {max_detector_alpha}')
-    print(f'dalpha                    [mrad]: {dalpha*1e3}')
-    print(f'probe.angular_sampling[0] [mrad]: {probe.angular_sampling}')
 
 
     fig, (ax_fourier, ax_real) = plt.subplots(1, 2, figsize=(8, 4))
@@ -253,6 +237,9 @@ def _(
         References: 
 
         - Yang et al. (2016) [10/f9fwhk](https://doi.org/10/f9fwhk)
+        - Bennemann, Kirkland, Muller & Nellist (2026), *Detective Quantum Efficiency-Based Comparison of HRTEM and Ptychography Phase Imaging*, Microsc. Microanal. 32(2), ozag018 [10.1093/mam/ozag018](https://doi.org/10.1093/mam/ozag018)
+        - Varnavides, Bekkevold, Ribet, McCray, Scott, Jones & Ophus (2026), *Beyond Contrast Transfer: Spectral SNR as a Finite-Dose Metric for STEM Phase Retrieval*, Microsc. Microanal. 32(2), ozag005 [10.1093/mam/ozag005](https://doi.org/10.1093/mam/ozag005)
+        - [arXiv:2512.19460](https://arxiv.org/abs/2512.19460)
  
 
     """

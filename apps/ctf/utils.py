@@ -104,8 +104,84 @@ def simulate_data(complex_obj, probe_array, row, col):
     """ """
     arr = np.asarray(complex_obj,dtype=np.complex128)
     probe = np.asarray(probe_array,dtype=np.complex128)
-    
+
     obj_patches = arr[row,col]
     exit_waves = obj_patches*probe
     amplitudes = np.abs(np.fft.fft2(exit_waves))
     return amplitudes
+
+
+def pair_overlap_area(d, R):
+    """Overlap area of two circles of radius ``R`` with centre separation ``d``.
+
+    Returns 0 where ``d >= 2R``. Vectorised over ``d``. Port of scatterem
+    ``utils/transfer.py:pair_overlap_area``.
+    """
+    d = np.asarray(d, dtype=np.float64)
+    area = np.zeros_like(d)
+    mask = d < 2 * R
+    dm = d[mask]
+    area[mask] = 2 * R**2 * np.arccos(dm / (2 * R)) - 0.5 * dm * np.sqrt(4 * R**2 - dm**2)
+    return area
+
+
+def triple_overlap_area(q, R):
+    """Triple-overlap area of three radius-``R`` circles centred at -q, 0, +q.
+
+    Nonzero only for ``0 <= q <= R``. Port of scatterem
+    ``utils/transfer.py:triple_overlap_area``.
+    """
+    q = np.asarray(q, dtype=np.float64)
+    area = np.zeros_like(q)
+    mask = q <= R
+    qm = q[mask]
+    area[mask] = np.pi * R**2 - 2 * R**2 * np.arcsin(qm / R) - 2 * qm * np.sqrt(R**2 - qm**2)
+    return area
+
+
+def double_and_triple_pixel_counts(q, R, delta_k):
+    """Detector-pixel counts in the double- (N2) and triple- (N3) overlap regions.
+
+    Three radius-``R`` apertures centred at -q, 0, +q; ``delta_k`` is the detector
+    reciprocal-pixel size. q, R, delta_k must share one reciprocal-length unit
+    (1/Angstrom). Both counts are 0 for ``q >= 2R``. Port of scatterem
+    ``utils/transfer.py:double_and_triple_pixel_counts``.
+    """
+    q = np.asarray(q, dtype=np.float64)
+    a3 = triple_overlap_area(q, R)
+    a2 = 2 * pair_overlap_area(q, R) + pair_overlap_area(2 * q, R) - 3 * a3
+    a2[q >= 2 * R] = 0.0
+    a3[q >= 2 * R] = 0.0
+    return a2 / delta_k**2, a3 / delta_k**2
+
+
+def ptycho_ssnr(pctf, q, R, delta_k, fluence):
+    """Analytical direct-ptychography SSNR from a 1-D radial PCTF.
+
+    Mirrors scatterem ``direct_ptychography_ssnr``:
+    ``SSNR(q) = fluence * PCTF(q)**2 / noise(q)**2`` with
+    ``noise**2 = (N2 + N3) / Nalpha`` and ``Nalpha = pi * (R / delta_k)**2``.
+    Returns 0 where the apertures no longer overlap (``q >= 2R`` -> noise 0).
+
+    pctf, q : 1-D arrays of equal length. R, delta_k : 1/Angstrom.
+    fluence : electrons per probe position.
+    """
+    pctf = np.asarray(pctf, dtype=np.float64)
+    q = np.asarray(q, dtype=np.float64)
+    n2, n3 = double_and_triple_pixel_counts(q, R, delta_k)
+    n_alpha = np.pi * (R / delta_k) ** 2
+    noise_sq = (n2 + n3) / n_alpha
+    ssnr = np.zeros_like(pctf)
+    nz = noise_sq > 0
+    ssnr[nz] = fluence * pctf[nz] ** 2 / noise_sq[nz]
+    return ssnr
+
+
+def adf_ssnr(adf_ctf, fluence, efficiency):
+    """Incoherent ADF-STEM SSNR under white (Poisson) noise.
+
+    ``SSNR(q) = fluence * efficiency * CTF(q)**2``. fluence is electrons per probe
+    position; efficiency is the fraction of electrons reaching the annular detector.
+    """
+    adf_ctf = np.asarray(adf_ctf, dtype=np.float64)
+    return fluence * efficiency * adf_ctf**2

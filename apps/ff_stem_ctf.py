@@ -5,7 +5,7 @@ app = marimo.App(width="medium")
 
 
 @app.cell
-def _(mo, np):
+def _(mo):
     # controls
     max_semiangle = mo.ui.dropdown(options={r"1 alpha":1, "2 alpha":2, "3 alpha":3, "4 alpha":4, "5 alpha":5, "6 alpha":6},
                             value="2 alpha")  # initial value
@@ -29,12 +29,6 @@ def _(mo, np):
         stop=40,
         value=20,
         step=0.5,
-        show_value=True,
-    )
-
-    dose = mo.ui.slider(
-        steps=np.logspace(2, 6, 41).tolist(),
-        value=1e4,
         show_value=True,
     )
 
@@ -71,7 +65,6 @@ def _(mo, np):
         c3_scherzer,
         convergence_angle,
         detector,
-        dose,
         energy,
         max_semiangle,
     )
@@ -149,7 +142,6 @@ def _(
     defocus,
     detector,
     dk,
-    dose,
     energy,
     fig_pctf,
     lam,
@@ -239,7 +231,7 @@ def _(
         - Yang et al. (2016) [10/f9fwhk](https://doi.org/10/f9fwhk)
         - Bennemann, Kirkland, Muller & Nellist (2026), *Detective Quantum Efficiency-Based Comparison of HRTEM and Ptychography Phase Imaging*, Microsc. Microanal. 32(2), ozag018 [10.1093/mam/ozag018](https://doi.org/10.1093/mam/ozag018)
         - Varnavides, Bekkevold, Ribet, McCray, Scott, Jones & Ophus (2026), *Beyond Contrast Transfer: Spectral SNR as a Finite-Dose Metric for STEM Phase Retrieval*, Microsc. Microanal. 32(2), ozag005 [10.1093/mam/ozag005](https://doi.org/10.1093/mam/ozag005)
-        - [arXiv:2512.19460](https://arxiv.org/abs/2512.19460)
+        - S. You, G. Varnavides, S. Khavnekar, N. Palatkin, S. Shao, M. Wu, D. Stroppa, D. Chernikova, B. Zhu, R. Egoavil, S. Vespucci, X. Ye, F. K. M. Schur, E. Spiecker & P. Pelz, *Gap-free Information Transfer in 4D-STEM via Fusion of Complementary Scattering Channels*, [arXiv:2512.19460](https://arxiv.org/abs/2512.19460)
  
 
     """
@@ -284,7 +276,6 @@ def _(
                     gap=0.5,
                 ),
             ),
-            _ctrl_row("Dose [e⁻/Å²]", dose),
             _ctrl_row("ADF efficiency η", adf_efficiency),
             _ctrl_row("ADF γ [Å]", adf_gamma),
         ],
@@ -377,7 +368,6 @@ def _(
     adf_ssnr,
     convergence_angle,
     dk,
-    dose,
     lam,
     np,
     pctf,
@@ -387,15 +377,13 @@ def _(
     # Spatial-frequency axis for the 1-D radial PCTF: q[n] = n * dk  (1/Å).
     q = np.arange(len(pctf)) * dk
     R = (convergence_angle.value * 1e-3) / lam          # aperture radius, 1/Å
-    fluence = dose.value * sampling**2                   # e⁻ per probe position
+    fluence = 1e4 * sampling**2          # e⁻ per probe at a fixed 1e4 e⁻/Å² reference
 
     ssnr_ptycho = ptycho_ssnr(pctf, q, R, dk, fluence)
 
-    # ADF resolution envelope (Lorentzian), coupled to dose: the half-power cutoff
-    # q_c rises as dose**(1/4) (dose-limited-resolution law), so more dose pushes the
-    # ADF rolloff to higher q. adf_gamma (Å) is the resolution length at dose_ref.
-    dose_ref = 1e4
-    q_c = (1.0 / adf_gamma.value) * (dose.value / dose_ref) ** 0.25
+    # ADF resolution envelope (Lorentzian): adf_gamma (Å) sets the half-power cutoff
+    # length q_c = 1/adf_gamma (1/Å). Larger γ -> earlier rolloff (lower resolution).
+    q_c = 1.0 / adf_gamma.value
     adf_envelope = 1.0 / (1.0 + (q / q_c) ** 2)
     ssnr_adf = adf_ssnr(adf_ctf_base, fluence, adf_efficiency.value) * adf_envelope
 

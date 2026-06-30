@@ -5,7 +5,7 @@ app = marimo.App(width="medium")
 
 
 @app.cell
-def _(mo):
+def _(mo, np):
     # controls
     max_semiangle = mo.ui.dropdown(options={r"1 alpha":1, "2 alpha":2, "3 alpha":3, "4 alpha":4, "5 alpha":5, "6 alpha":6},
                             value="2 alpha", # initial value
@@ -36,8 +36,16 @@ def _(mo):
         show_value=True,
     )
 
-    adf_suppression = mo.ui.slider(
-        start=1, stop=50, value=10, step=1, label="ADF dose falloff γ [Å]", show_value=True
+    dose = mo.ui.slider(
+        steps=np.logspace(2, 6, 41).tolist(),
+        value=1e4,
+        label="dose [e⁻/Å²]",
+        show_value=True,
+    )
+
+    adf_efficiency = mo.ui.slider(
+        start=0.01, stop=0.5, step=0.01, value=0.1,
+        label="ADF efficiency η", show_value=True,
     )
 
 
@@ -54,11 +62,12 @@ def _(mo):
     # """
     # ).center()
     return (
-        adf_suppression,
+        adf_efficiency,
         astigmatism,
         astigmatism_angle_slider,
         convergence_angle,
         detector,
+        dose,
         energy,
         max_semiangle,
     )
@@ -121,11 +130,12 @@ def _(
 @app.cell
 def _(
     add_scalebar,
-    adf_suppression,
+    adf_efficiency,
     convergence_angle,
     defocus,
     detector,
     dk,
+    dose,
     energy,
     fig_pctf,
     lam,
@@ -245,7 +255,7 @@ def _(
     ) 
  
     vertical = mo.vstack(
-        [energy,max_semiangle,detector,convergence_angle,defocus, adf_suppression, text_nyquist,text7,text1, text2, text3, text4],
+        [energy,max_semiangle,detector,convergence_angle,defocus, dose, adf_efficiency, text_nyquist,text7,text1, text2, text3, text4],
         align="end",
         gap=0
     )
@@ -274,20 +284,33 @@ def _(
 
 
 @app.cell
-def _(adf_suppression, np, plt, probe, probe_fourier, probe_real):
+def _(np, probe_fourier):
+    # Ptychographic PCTF: 0.5 * sum|gamma(q)| / sum|A|, swept over shift q (along x).
+    # Performance: the aperture is a small disk in a large array, so crop the all-zero
+    # rows (the shift is along columns, so dropping zero rows is exact), work in
+    # complex64, and stop once the shifted apertures no longer overlap.
     sh = np.array(probe_fourier.shape)
 
-    Asum = np.abs(probe_fourier).sum()
-    pctf = np.zeros((sh[0]//2,))
+    A = probe_fourier.astype(np.complex64)
+    row_nonzero = np.abs(A).sum(axis=1) > 0
+    A_crop = A[row_nonzero]
+    Asum = np.abs(A_crop).sum()
 
-    nrange = sh[0]//2
-    for nroll in range(nrange):
-        psi_plus = np.roll(probe_fourier, (0,-nroll))
-        psi_minus = np.roll(probe_fourier, (0,nroll))
-        gamma = probe_fourier.conj() * psi_minus - probe_fourier * psi_plus.conj()
+    pctf = np.zeros((sh[0] // 2,))
+    for nroll in range(sh[0] // 2):
+        psi_plus = np.roll(A_crop, -nroll, axis=1)
+        psi_minus = np.roll(A_crop, nroll, axis=1)
+        gamma = A_crop.conj() * psi_minus - A_crop * psi_plus.conj()
         gammasum = np.abs(gamma).sum()
+        # once apertures stop overlapping, all remaining shifts are zero
+        if nroll > 0 and gammasum == 0:
+            break
         pctf[nroll] = 0.5 * gammasum / Asum
+    return pctf, sh
 
+
+@app.cell
+def _(np, probe_real, sh):
     # ADF-STEM CTF: Fourier transform of the real-space probe intensity
     # (= autocorrelation of the aperture). This transfer function is real-valued;
     # taking |.| would rectify negative (contrast-reversal) lobes into fake ringing,
@@ -303,43 +326,69 @@ def _(adf_suppression, np, plt, probe, probe_fourier, probe_real):
         np.bincount(r.ravel(), weights=intensity_fft.ravel())
         / np.bincount(r.ravel())
     )
-    adf_ctf = radial_profile[: sh[0] // 2]
-    adf_ctf = adf_ctf / adf_ctf[0]
+    adf_ctf_base = radial_profile[: sh[0] // 2]
+    adf_ctf_base = adf_ctf_base / adf_ctf_base[0]
+    return (adf_ctf_base,)
 
+
+@app.cell
+def _(
+    adf_ctf_base,
+    adf_efficiency,
+    adf_ssnr,
+    convergence_angle,
+    dk,
+    dose,
+    lam,
+    np,
+    pctf,
+    ptycho_ssnr,
+    sampling,
+):
+    # Spatial-frequency axis for the 1-D radial PCTF: q[n] = n * dk  (1/Å).
+    q = np.arange(len(pctf)) * dk
+    R = (convergence_angle.value * 1e-3) / lam          # aperture radius, 1/Å
+    fluence = dose.value * sampling**2                   # e⁻ per probe position
+
+    ssnr_ptycho = ptycho_ssnr(pctf, q, R, dk, fluence)
+    ssnr_adf = adf_ssnr(adf_ctf_base, fluence, adf_efficiency.value)
+    ssnr_combined = ssnr_ptycho + ssnr_adf
+    return R, fluence, q, ssnr_adf, ssnr_combined, ssnr_ptycho
+
+
+@app.cell
+def _(np, plt, probe, sh, ssnr_adf, ssnr_combined, ssnr_ptycho):
     kx, ky = probe.get_spatial_frequencies()
 
-    # Dose-dependent resolution falloff: Lorentzian envelope ~ 1/q^2 at high q.
-    # adf_suppression.value (gamma, in Å) sets the half-power resolution length:
-    # env = 0.5 at q = 1/gamma. Larger gamma -> earlier falloff (lower dose).
-    q = kx[: sh[0] // 2]
-    dose_envelope = 1.0 / (1.0 + (adf_suppression.value * q) ** 2)
-    adf_ctf = adf_ctf * dose_envelope
+    # SSNR is 0 at DC and beyond the 2R aperture-overlap cutoff; mask those to NaN
+    # so the log plot shows clean gaps instead of log(0) warnings.
+    def _pos(a):
+        a = np.asarray(a, dtype=float).copy()
+        a[a <= 0] = np.nan
+        return a
 
-    fig_pctf, ax_pctf = plt.subplots(figsize=(16.8/1.5,3))
-    ax_pctf.plot(pctf, label='ptychography')
-    ax_pctf.plot(adf_ctf, label='ADF-STEM')
+    fig_pctf, ax_pctf = plt.subplots(figsize=(16.8 / 1.5, 3))
+    ax_pctf.semilogy(_pos(ssnr_ptycho), label='ptychography')
+    ax_pctf.semilogy(_pos(ssnr_adf), label='ADF-STEM')
+    ax_pctf.semilogy(_pos(ssnr_combined), label='ptychography + ADF-STEM')
     ax_pctf.legend()
-    ax_pctf.set_ylabel('PCTF')
+    ax_pctf.set_ylabel('SSNR')
     ax_pctf.set_xlabel('spatial frequency [1/Å]')
-    ax_pctf.set_ylim(0, 1) 
-    ax_pctf.set_xlim(0, sh[0]/2) 
+    ax_pctf.set_xlim(0, sh[0] / 2)
 
-    # Set 16 evenly spaced x-ticks
-    xtick_positions = np.linspace(0, sh[0]/2, 16)
+    xtick_positions = np.linspace(0, sh[0] / 2, 16)
     ax_pctf.set_xticks(xtick_positions)
-    w =  kx[:sh[0]//2][::sh[0]//32]
- 
+    w = kx[: sh[0] // 2][:: sh[0] // 32]
     ax_pctf.set_xticklabels([f'{x:.1f}' for x in w])
 
     ax_top = ax_pctf.twiny()
-    w =  kx[:sh[0]//2][::sh[0]//32]
+    w = kx[: sh[0] // 2][:: sh[0] // 32]
     w = w[1:]
-    xtick_positions = np.linspace(0, sh[0]/2, 16)
     ax_top.set_xticks(xtick_positions[1:])
-    ax_top.set_xticklabels([f'{1/x:.1f}' for x in w])
+    ax_top.set_xticklabels([f'{1 / x:.1f}' for x in w])
     ax_top.set_xlabel('spatial distances [Å]')
     plt.show()
-    return fig_pctf, sh
+    return (fig_pctf,)
 
 
 @app.cell
@@ -684,7 +733,8 @@ def _():
     import matplotlib.pyplot as plt
     from mpl_toolkits.axes_grid1.anchored_artists import AnchoredSizeBar
     from colorspacious import cspace_convert
-    return AnchoredSizeBar, cspace_convert, mo, np, plt
+    from ctf.utils import ptycho_ssnr, adf_ssnr
+    return AnchoredSizeBar, adf_ssnr, cspace_convert, mo, np, plt, ptycho_ssnr
 
 
 @app.cell

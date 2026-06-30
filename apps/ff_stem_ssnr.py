@@ -228,10 +228,10 @@ def _(
         f""" 
         References: 
 
+        - S. You, G. Varnavides, S. Khavnekar, N. Palatkin, S. Shao, M. Wu, D. Stroppa, D. Chernikova, B. Zhu, R. Egoavil, S. Vespucci, X. Ye, F. K. M. Schur, E. Spiecker & P. Pelz, *Gap-free Information Transfer in 4D-STEM via Fusion of Complementary Scattering Channels*, [arXiv:2512.19460](https://arxiv.org/abs/2512.19460)
         - Yang et al. (2016) [10/f9fwhk](https://doi.org/10/f9fwhk)
         - Bennemann, Kirkland, Muller & Nellist (2026), *Detective Quantum Efficiency-Based Comparison of HRTEM and Ptychography Phase Imaging*, Microsc. Microanal. 32(2), ozag018 [10.1093/mam/ozag018](https://doi.org/10.1093/mam/ozag018)
         - Varnavides, Bekkevold, Ribet, McCray, Scott, Jones & Ophus (2026), *Beyond Contrast Transfer: Spectral SNR as a Finite-Dose Metric for STEM Phase Retrieval*, Microsc. Microanal. 32(2), ozag005 [10.1093/mam/ozag005](https://doi.org/10.1093/mam/ozag005)
-        - S. You, G. Varnavides, S. Khavnekar, N. Palatkin, S. Shao, M. Wu, D. Stroppa, D. Chernikova, B. Zhu, R. Egoavil, S. Vespucci, X. Ye, F. K. M. Schur, E. Spiecker & P. Pelz, *Gap-free Information Transfer in 4D-STEM via Fusion of Complementary Scattering Channels*, [arXiv:2512.19460](https://arxiv.org/abs/2512.19460)
  
 
     """

@@ -353,12 +353,12 @@ def _(
     ssnr_ptycho = ptycho_ssnr(pctf, q, R, dk, fluence)
     ssnr_adf = adf_ssnr(adf_ctf_base, fluence, adf_efficiency.value)
     ssnr_combined = ssnr_ptycho + ssnr_adf
-    return R, fluence, q, ssnr_adf, ssnr_combined, ssnr_ptycho
+    return ssnr_adf, ssnr_combined, ssnr_ptycho
 
 
 @app.cell
 def _(np, plt, probe, sh, ssnr_adf, ssnr_combined, ssnr_ptycho):
-    kx, ky = probe.get_spatial_frequencies()
+    kx, _ = probe.get_spatial_frequencies()
 
     # SSNR is 0 at DC and beyond the 2R aperture-overlap cutoff; mask those to NaN
     # so the log plot shows clean gaps instead of log(0) warnings.
@@ -382,10 +382,8 @@ def _(np, plt, probe, sh, ssnr_adf, ssnr_combined, ssnr_ptycho):
     ax_pctf.set_xticklabels([f'{x:.1f}' for x in w])
 
     ax_top = ax_pctf.twiny()
-    w = kx[: sh[0] // 2][:: sh[0] // 32]
-    w = w[1:]
     ax_top.set_xticks(xtick_positions[1:])
-    ax_top.set_xticklabels([f'{1 / x:.1f}' for x in w])
+    ax_top.set_xticklabels([f'{1 / x:.1f}' for x in w[1:]])
     ax_top.set_xlabel('spatial distances [Å]')
     plt.show()
     return (fig_pctf,)

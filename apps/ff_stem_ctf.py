@@ -421,9 +421,9 @@ def _(np, plt, probe, sh, ssnr_adf, ssnr_combined, ssnr_ptycho):
     kx, _ = probe.get_spatial_frequencies()
 
     fig_pctf, ax_pctf = plt.subplots(figsize=(16.8 / 1.5, 3))
-    ax_pctf.plot(ssnr_ptycho, label='FF-STEM')
+    ax_pctf.plot(ssnr_ptycho, label='ptychography')
     ax_pctf.plot(ssnr_adf, label='ADF-STEM')
-    ax_pctf.plot(ssnr_combined, label='FF-STEM + ADF-STEM')
+    ax_pctf.plot(ssnr_combined, label='FF-STEM')
     ax_pctf.legend()
     ax_pctf.set_ylabel('SSNR')
     ax_pctf.set_xlabel('spatial frequency [1/Å]')
